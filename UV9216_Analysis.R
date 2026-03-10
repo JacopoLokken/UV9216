@@ -373,7 +373,7 @@ corrplot(
   tl.cex      = 0.8,
   col         = colorRampPalette(c("#d73027", "white", "#1a9850"))(200),
   diag        = FALSE,
-  mar         = c(0, 0, 2, 0),
-  title       = "Appendix: Pairwise associations among moderators (mixed correlation matrix)"
+  mar         = c(0, 0, 2, 0)
 )
+
 
