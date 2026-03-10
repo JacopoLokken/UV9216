@@ -5,7 +5,7 @@ setwd() # IMPORTANT! SET WORKING DIRECTORY WHERE DATASET IS
 
 # Run this to a) Download the packages if not done and b) Open them
 required_packages <- c("metaforest", "caret", "readxl", "dplyr",
-                       "ggplot2", "robumeta", "stringr")
+                       "ggplot2", "robumeta", "stringr", "psych","corrplot")
 
 for (pkg in required_packages) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
@@ -277,4 +277,103 @@ r2_oob
 plot(final_mf) # Has the final model converged?
 VarImpPlot(final_mf) # Final variable selection and importance in predicting the outcome
 
+#### 
+#### Corr matrix - TO BE INTERPRETED WITH CAUTION. IF IN POSSESION OF THE ASSIGNEMENT DOCUMENT, READ APPENDIX III NOTE ####
+####
+#  Build dat_cor exactly  then convert ALL columns to numeric
+dat_cor <- dat_mf %>%
+  mutate(
+    EI_Stream = factor(
+      case_when(
+        Ability_EI   == 1 ~ 1L,   # Ability
+        SelfRated_EI == 1 ~ 2L,   # Self-Rated
+        Mixed_EI     == 1 ~ 3L    # Mixed
+      )
+    )
+  ) %>%
+  select(
+    yi, vi,
+    EI_Stream,
+    Ed_Level_Num,
+    GPA_type_num,
+    GPA_gen_sci_art_num,
+    Pub_type_Num,
+    PcFemale, Mean_age, Year,
+    GPA_source,
+    EI_reliability
+  ) %>%
+  # Convert everything to numeric otherwse mixedCor throws errors....
+  mutate(across(everything(), ~ as.integer(as.factor(.x)))) %>%
+  # ..but restore true continuous vars (as.integer would discretize them)
+  mutate(
+    yi             = dat_mf$yi,
+    vi             = dat_mf$vi,
+    PcFemale       = dat_mf$PcFemale,
+    Mean_age       = dat_mf$Mean_age,
+    Year           = dat_mf$Year,
+    EI_reliability = dat_mf$EI_reliability
+  )
+
+# Drop zero-variance columns (these crash mixedCor)
+variances <- sapply(dat_cor, var, na.rm = TRUE)
+zero_var  <- names(variances[variances == 0])
+if (length(zero_var) > 0) {
+  cat("Dropping zero-variance columns:", paste(zero_var, collapse = ", "), "\n")
+  dat_cor <- dat_cor[, !names(dat_cor) %in% zero_var]
+}
+
+# Redefine column indices AFTER potential drops
+all_vars        <- names(dat_cor)
+continuous_vars <- c("yi", "vi", "PcFemale", "Mean_age", "Year", "EI_reliability")
+polytomous_vars <- setdiff(all_vars, continuous_vars)
+
+c_idx <- which(all_vars %in% continuous_vars)
+p_idx <- which(all_vars %in% polytomous_vars)
+
+cat("Continuous:", all_vars[c_idx], "\n")
+cat("Polytomous:", all_vars[p_idx], "\n")
+
+# Run mixedCor with global = FALSE to handle unequal amunt of levels between factors
+mixed_cor_result <- mixedCor(
+  data   = dat_cor,
+  c      = c_idx,
+  p      = p_idx,
+  global = FALSE,
+  use    = "pairwise.complete.obs"
+)
+
+R <- mixed_cor_result$rho
+
+#  Nice names for hardly interpretable coefficients :)
+nice_names <- c(
+  "yi"                  = "Effect size (r)",
+  "vi"                  = "Sampling variance",
+  "EI_Stream"           = "EI Stream",
+  "Ed_Level_Num"        = "Education level",
+  "GPA_type_num"        = "Achievement type",
+  "GPA_gen_sci_art_num" = "Subject area",
+  "Pub_type_Num"        = "Publication type",
+  "PcFemale"            = "% Female",
+  "Mean_age"            = "Mean age",
+  "Year"                = "Year",
+  "GPA_source"          = "GPA source",
+  "EI_reliability"      = "EI reliability"
+)
+rownames(R) <- colnames(R) <- nice_names[colnames(dat_cor)]
+
+# Nice colours
+corrplot(
+  R,
+  method      = "color",
+  type        = "lower",
+  addCoef.col = "black",
+  number.cex  = 0.65,
+  tl.col      = "black",
+  tl.srt      = 45,
+  tl.cex      = 0.8,
+  col         = colorRampPalette(c("#d73027", "white", "#1a9850"))(200),
+  diag        = FALSE,
+  mar         = c(0, 0, 2, 0),
+  title       = "Appendix: Pairwise associations among moderators (mixed correlation matrix)"
+)
 
