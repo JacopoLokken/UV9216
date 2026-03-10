@@ -1,5 +1,5 @@
 # UV9216
-Meteaforest applied to existing, open source meta-analysis
+Metaforest applied to existing, open source meta-analysis
 
 The original study is "MacCann, C., Jiang, Y., Brown, L. E. R., Double, K. S., Bucich, M., & Minbashian, A. (2020). Emotional intelligence predicts academic performance: A meta-analysis.Psychological Bulletin, 146(2), 150–186.",  https://doi.org/10.1037/bul0000219
 
