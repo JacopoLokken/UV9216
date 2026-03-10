@@ -1,7 +1,7 @@
 ####
 #### Packages and Data Prep ####
 ####
-setwd("C:\\Users\\jacop\\OneDrive\\Desktop\\PhD Courses\\Meta-Analysis\\Exams") # Change to desired working directory
+setwd() # IMPORTANT! SET WORKING DIRECTORY WHERE DATASET IS
 
 # Run this to a) Download the packages if not done and b) Open them
 required_packages <- c("metaforest", "caret", "readxl", "dplyr",
@@ -62,7 +62,7 @@ cat("After outlier removal:", nrow(dat_clean), "effect sizes,",
 
 ####
 #### Moderators Prep ####
-
+####
 dat <- dat_clean %>%
   mutate(
     Ability_EI   = as.integer(Stream == 1), # We code the three EI streams as dummy variables, 
@@ -149,7 +149,7 @@ dat_mf <- dat %>%
   ) %>%
   as.data.frame()
 
-# Handle missing values. Note. Missing proportions are negligible. I will use mode/median
+# Handle missing values. Missing proportions are negligible, median/mode used
 
 # GPA_gen_sci_art_num: 16 missing — impute with mode (most frequent category)
 mode_subj <- names(which.max(table(dat_mf$GPA_gen_sci_art_num)))
@@ -276,4 +276,5 @@ r2_oob
 
 plot(final_mf) # Has the final model converged?
 VarImpPlot(final_mf) # Final variable selection and importance in predicting the outcome
+
 
